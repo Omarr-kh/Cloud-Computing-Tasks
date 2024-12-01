@@ -1,6 +1,3 @@
-Here is the `README.md` content formatted in code for easy copying:
-
-```markdown
 # Channel Subscriptions with Firebase Chat Rooms
 
 This project allows users to subscribe to channels, join chat rooms, and send/receive messages in real-time. The application uses Firebase Firestore for channel and subscription management and Firebase Realtime Database for storing chat room messages. It provides a basic interface where users can:
@@ -40,7 +37,7 @@ Before running the application, you need to set up Firebase:
 
 ### 3. Add Firebase Configuration
 
-Replace the Firebase configuration in the `index.html` file with your Firebase project's configuration. You can find this configuration in your Firebase Console.
+Replace the Firebase configuration in the `*.html` file with your Firebase project's configuration. You can find this configuration in your Firebase Console.
 
 ```javascript
 const firebaseConfig = {
@@ -56,10 +53,16 @@ const firebaseConfig = {
 
 ### 4. Running the Application
 
-To run the application, you can simply open the `index.html` file in your browser. Since this is a client-side application, it will connect to Firebase and work directly from the browser.
+To run the application, you can simply open the `login.html` file in your browser. Since this is a client-side application, it will connect to Firebase and work directly from the browser.
 
 ```bash
-open index.html
+open login.html
+```
+
+Run the django server:
+
+```bash
+python manage.py runserver
 ```
 
 ## Usage
@@ -93,11 +96,5 @@ If you are an admin or have the necessary permissions, you can click the "Remove
 - **Firebase Firestore**: Used for storing channels and user subscriptions.
 - **Firebase Realtime Database**: Used for storing and managing messages in real-time chat rooms.
 - **Firebase Authentication**: Handles user login and authentication.
-- **HTML/CSS/JavaScript**: The frontend of the application is built with basic HTML, CSS, and JavaScript.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
-
-You can copy this content and paste it directly into your `README.md` file. It provides a complete guide to the setup and functionality of your Firebase-based channel subscriptions and chat rooms project.
+- **HTML/JavaScript**: The frontend of the application is built with basic HTML, and JavaScript.
+- **Python/Django**: Used for the backend
