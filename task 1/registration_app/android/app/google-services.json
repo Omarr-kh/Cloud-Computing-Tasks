@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "571953732019",
+    "project_id": "django-notifications-40ebc",
+    "storage_bucket": "django-notifications-40ebc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571953732019:android:e49a721af984b98d2793c6",
+        "android_client_info": {
+          "package_name": "com.exa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzwenuTqCTeIO0z2nPQCw6lnlfQ7g8vSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571953732019:android:6c8f83c2d7d5f16b2793c6",
+        "android_client_info": {
+          "package_name": "com.example.registration_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzwenuTqCTeIO0z2nPQCw6lnlfQ7g8vSs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
