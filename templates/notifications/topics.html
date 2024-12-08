@@ -1,16 +1,144 @@
-<!-- templates/myapp/index.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase Notifications</title>
 
-    <script type="module" src="{% static 'js/firebase.js' %}" defer></script>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Notifications</title>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-messaging-compat.js"></script>
+
+
+  <!-- Include custom JS script -->
+  <script type="module" src="{% static 'js/firebase.js' %}" defer></script>
 </head>
+
 <body>
-    <h1>Welcome to the Firebase Notification Example</h1>
-    <!-- Your other HTML content -->
+  <h1>Welcome to the Firebase Notification Example</h1>
+
+  <!-- Add Topic Section -->
+  <div>
+    <h2>Add a New Topic</h2>
+    <input type="text" id="topic-name" placeholder="Topic Name">
+    <input type="text" id="topic-description" placeholder="Topic Description">
+    <button onclick="addTopic()">Add Topic</button>
+  </div>
+
+  <h2>Topics</h2>
+  <ul id="topics-list"></ul>
+  <script>
+    (async function initializeFirebase() {
+      try {
+        const response = await fetch("/api/firebase-config/");
+        const config = await response.json();
+
+        // Initialize Firebase dynamically using compatibility mode
+        firebase.initializeApp(config);
+        console.log("Firebase initialized successfully.");
+      } catch (error) {
+        console.error("Failed to load Firebase configuration or initialize Firebase services:", error);
+        alert("Unable to initialize Firebase. Please try again later.");
+      }
+    })();
+    async function addTopic() {
+      const name = document.getElementById("topic-name").value;
+      const description = document.getElementById("topic-description").value;
+
+      if (!name || !description) {
+        alert("Please fill in both fields.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/notifications/add-topic/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name,
+            description: description,
+          }),
+        });
+
+        if (response.ok) {
+          alert("Topic added successfully!");
+          fetchTopics(); // Refresh the topic list
+        } else {
+          alert("Failed to add topic.");
+        }
+      } catch (error) {
+        console.error("Error adding topic:", error);
+        alert("An error occurred while adding the topic.");
+      }
+    }
+
+    // topics.js
+    const topicsList = document.getElementById("topics-list");
+
+    // Function to fetch all topics from the API
+    async function fetchTopics() {
+      try {
+        const response = await fetch("/notifications/get-topics/");
+        if (!response.ok) {
+          throw new Error("Failed to fetch topics");
+        }
+        const topics = await response.json();
+
+        // Clear existing topics
+        topicsList.innerHTML = "";
+
+        // Create list items for each topic
+        topics.forEach((topic) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = topic.name;
+
+          const button = document.createElement("button");
+          button.textContent = "Subscribe";
+          button.onclick = () => subscribeToTopic(topic.name);
+
+          listItem.appendChild(button);
+          topicsList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+      }
+    }
+
+    // Function to subscribe to a topic using Firebase token
+    async function subscribeToTopic(topicName) {
+      try {
+        const messaging = firebase.messaging();
+        const token = await messaging.getToken();
+
+        // Send the token and topic name to your server
+        const response = await fetch('/notifications/subscribe-topic/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            token: token,
+            topic: topicName
+          })
+        });
+
+        if (response.ok) {
+          alert(`Subscribed to topic: ${topicName}`);
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Subscription failed');
+        }
+      } catch (error) {
+        console.error("Error subscribing to topic:", error);
+        alert(error.message || "Subscription failed. Please try again.");
+      }
+    }
+    // Fetch topics on page load
+    document.addEventListener("DOMContentLoaded", fetchTopics);
+  </script>
 </body>
+
 </html>
