@@ -8,21 +8,33 @@ from rest_framework import status
 from fcm_django.models import FCMDevice
 from firebase_admin.messaging import Message, Notification, SendResponse
 
+from .models import Topic
+
+import traceback
+
+
+@api_view(["POST"])
+def create_topic(request):
+    try:
+        name = request.data.get("name")
+        description = request.data.get("description")
+
+        Topic.objects.create(name=name, description=description)
+
+        return Response(status=status.HTTP_201_CREATED)
+    except:
+        print(traceback.format_exc())
+        return Response(status=status.HTTP_409_CONFLICT)
+
 
 @api_view(["POST"])
 def register_user(request):
     try:
-        username = request.data.get('username')
-        password = request.data.get('password')
-        registration_token = request.data.get('registration_token')
-        device_type = request.data.get('device_type')
+        token = request.data.get('token')
 
-        print(f"Registration Token: {registration_token}")
+        print(f"Registration Token: {token}")
 
-        user = User.objects.create_user(username=username, password=password)
-        FCMDevice.objects.create(
-            user=user, registration_id=registration_token, type="android"
-        )
+        FCMDevice.objects.get_or_create(registration_id=token, type="web")
 
     except Exception as e:
         print(f"Error: {str(e)}")
@@ -50,3 +62,12 @@ def send_notification(request):
         print(f"FCM Error: {response}")
 
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def home(request):
+    try:
+        return render(request, 'notifications/index.html')
+    except:
+        print(traceback.format_exc())
+        return Response(status=status.HTTP_409_CONFLICT)

@@ -3,9 +3,12 @@ from django.urls import path, include
 
 from django.http import JsonResponse
 from django.conf import settings
+from django.conf.urls.static import static
 
 from django.http import HttpResponseForbidden
 from functools import wraps
+
+import os
 
 
 def internal_only(view_func):
@@ -30,7 +33,14 @@ def get_firebase_config(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include("notifications.urls")),
+    path('notifications/', include("notifications.urls")),
     path('chatroom/', include('chatrooms.urls')),
     path('api/firebase-config/', get_firebase_config, name='firebase-config'),
 ]
+
+urlpatterns += static(
+    'firebase-messaging-sw.js',
+    document_root=os.path.join(
+        settings.BASE_DIR, 'static', 'js', 'firebase-messaging-sw.js'
+    ),
+)

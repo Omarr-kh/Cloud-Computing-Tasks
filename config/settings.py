@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'chatrooms',
     'rest_framework',
     'fcm_django',
+    'notifications',
 ]
 
 INSTALLED_APPS += ['corsheaders']
@@ -138,7 +139,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# Specify where your static files (e.g., JS, CSS) are located
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Directory where static files will be collected in production
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

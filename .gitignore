@@ -1,6 +1,7 @@
 env/
 db.sqlite3
 *.json
+node_modules/
 
 ### OSX ###
 .DS_Store
