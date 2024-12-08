@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Channel Subscriptions</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+    <h1>Channel Subscriptions</h1>
+    <div>
+        <input type="text" id="channel-name" placeholder="Channel Name">
+        <button onclick="addChannel()">Add Channel</button>
+    </div>
+    <hr>
+    <h2>Available Channels</h2>
+    <ul id="channel-list"></ul>
+    <hr>
+    <h2>Your Subscriptions</h2>
+    <ul id="user-subscriptions"></ul>
+
+    <hr>
+    <h2>Chat Room</h2>
+    <div id="chat-room" style="display:none;">
+        <h3>Messages</h3>
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Type your message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+    <script>
+        // Declare global variables for Firebase services
+        let firestore, database, channelsRef, userSubscriptionsRef, messagesRef, currentChannelId;
+
+        // Firebase Configuration and Initialization
+        (async function initializeFirebase() {
+            try {
+                const response = await fetch("/api/firebase-config/");
+                const config = await response.json();
+
+                // Initialize Firebase dynamically
+                firebase.initializeApp(config);
+                console.log("Firebase initialized successfully.");
+
+                // Initialize Firestore and Realtime Database
+                firestore = firebase.firestore();
+                database = firebase.database();
+
+                channelsRef = firestore.collection('channels');
+                userSubscriptionsRef = firestore.collection('user_subscriptions');
+                messagesRef = database.ref('messages');
+
+                // Listen to Auth state
+                firebase.auth().onAuthStateChanged(user => {
+                    if (user) {
+                        listChannels();
+                        listUserSubscriptions();
+                    } else {
+                        alert('Please log in to manage subscriptions.');
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to load Firebase configuration or initialize Firebase services:", error);
+                alert("Unable to initialize Firebase. Please try again later.");
+            }
+        })();
+
+        // Add a channel to Firestore
+        function addChannel() {
+            const channelName = document.getElementById('channel-name').value;
+            if (channelName) {
+                channelsRef.add({ name: channelName }).then(() => {
+                    alert('Channel added successfully!');
+                    listChannels();
+                }).catch(error => {
+                    console.error('Error adding channel:', error);
+                });
+            } else {
+                alert('Please enter a channel name.');
+            }
+        }
+
+        // List available channels from Firestore
+        function listChannels() {
+            const userId = firebase.auth().currentUser?.uid;
+            if (!userId) {
+                alert('Please log in to view channels');
+                return;
+            }
+
+            channelsRef.get().then(snapshot => {
+                const channelList = document.getElementById('channel-list');
+                channelList.innerHTML = ''; // Clear existing channels
+
+                snapshot.forEach(doc => {
+                    const channel = doc.data();
+                    const channelId = doc.id;
+                    const li = document.createElement('li');
+                    li.textContent = channel.name;
+
+                    // Check if the user is subscribed to this channel
+                    userSubscriptionsRef.where('userId', '==', userId).where('channelId', '==', channelId).get().then(subscriptionsSnapshot => {
+                        if (!subscriptionsSnapshot.empty) {
+                            const joinButton = document.createElement('button');
+                            joinButton.textContent = 'Join';
+                            joinButton.onclick = () => joinChatRoom(channelId);
+                            li.appendChild(joinButton);
+                        } else {
+                            const subscribeButton = document.createElement('button');
+                            subscribeButton.textContent = 'Subscribe';
+                            subscribeButton.onclick = () => subscribeToChannel(channelId, channel.name);
+                            li.appendChild(subscribeButton);
+                        }
+                    }).catch(error => {
+                        console.error('Error checking user subscription:', error);
+                    });
+
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.onclick = () => removeChannel(channelId);
+                    li.appendChild(removeButton);
+
+                    channelList.appendChild(li);
+                });
+            }).catch(error => {
+                console.error('Error fetching channels:', error);
+            });
+        }
+
+        // Subscribe to a channel
+        function subscribeToChannel(channelId, channelName) {
+            const userId = firebase.auth().currentUser?.uid;
+            if (userId) {
+                userSubscriptionsRef.add({
+                    userId,
+                    channelId,
+                    channelName
+                }).then(() => {
+                    alert(`Subscribed to ${channelName}`);
+                    listUserSubscriptions();
+                }).catch(error => {
+                    console.error('Error subscribing to channel:', error);
+                });
+            } else {
+                alert('Please log in to subscribe to channels.');
+            }
+        }
+
+        // List user subscriptions
+        function listUserSubscriptions() {
+            const userId = firebase.auth().currentUser?.uid;
+            if (userId) {
+                userSubscriptionsRef.where('userId', '==', userId).get().then(snapshot => {
+                    const subscriptionList = document.getElementById('user-subscriptions');
+                    subscriptionList.innerHTML = '';
+                    snapshot.forEach(doc => {
+                        const subscription = doc.data();
+                        const li = document.createElement('li');
+                        li.textContent = subscription.channelName;
+                        const unsubscribeButton = document.createElement('button');
+                        unsubscribeButton.textContent = 'Unsubscribe';
+                        unsubscribeButton.onclick = () => unsubscribeFromChannel(doc.id);
+                        li.appendChild(unsubscribeButton);
+                        subscriptionList.appendChild(li);
+                    });
+                }).catch(error => {
+                    console.error('Error fetching subscriptions:', error);
+                });
+            }
+        }
+
+        // Unsubscribe from a channel
+        function unsubscribeFromChannel(subscriptionId) {
+            userSubscriptionsRef.doc(subscriptionId).delete().then(() => {
+                alert('Unsubscribed successfully.');
+                listUserSubscriptions();
+            }).catch(error => {
+                console.error('Error unsubscribing:', error);
+            });
+        }
+
+        // Remove a channel and its subscriptions
+        function removeChannel(channelId) {
+            const confirmRemoval = confirm("Are you sure you want to remove this channel?");
+            if (confirmRemoval) {
+                firestore.runTransaction(async (transaction) => {
+                    const channelRef = channelsRef.doc(channelId);
+                    transaction.delete(channelRef);
+                    const subscriptionsSnapshot = await userSubscriptionsRef.where('channelId', '==', channelId).get();
+                    subscriptionsSnapshot.forEach(subDoc => {
+                        transaction.delete(subDoc.ref);
+                    });
+                }).then(() => {
+                    alert('Channel and its subscriptions removed successfully.');
+                    listChannels(); // Refresh the channel list
+                }).catch(error => {
+                    console.error('Error removing channel and subscriptions:', error);
+                });
+            }
+        }
+
+        // Join a chat room
+        function joinChatRoom(channelId) {
+            currentChannelId = channelId;
+            document.getElementById('chat-room').style.display = 'block';
+            document.getElementById('messages').innerHTML = ''; // Clear previous messages
+            listMessages();
+        }
+
+        // Listen to messages in the chat room
+        function listMessages() {
+            if (currentChannelId) {
+                messagesRef.child(currentChannelId).on('child_added', snapshot => {
+                    const message = snapshot.val();
+                    const messagesDiv = document.getElementById('messages');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.textContent = `${message.sender}: ${message.content}`;
+                    messagesDiv.appendChild(messageDiv);
+                });
+            }
+        }
+
+        // Send a message to the chat room
+        function sendMessage() {
+            const messageContent = document.getElementById('message-input').value;
+            if (messageContent && currentChannelId) {
+                const userId = firebase.auth().currentUser?.uid;
+                const sender = firebase.auth().currentUser.email || 'Anonymous';
+                messagesRef.child(currentChannelId).push({
+                    sender,
+                    content: messageContent,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    document.getElementById('message-input').value = ''; // Clear message input
+                }).catch(error => {
+                    console.error('Error sending message:', error);
+                });
+            } else {
+                alert('Please type a message to send.');
+            }
+        }
+    </script>
+</body>
+
+</html>
