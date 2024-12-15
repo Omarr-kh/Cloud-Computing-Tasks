@@ -34,7 +34,7 @@ def get_firebase_config(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('notifications/', include("notifications.urls")),
-    path('chatroom/', include('chatrooms.urls')),
+    path('', include('chatrooms.urls')),
     path('api/firebase-config/', get_firebase_config, name='firebase-config'),
 ]
 
