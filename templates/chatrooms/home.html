@@ -13,6 +13,7 @@
             top: 10px;
             right: 10px;
         }
+
         #user-email {
             margin-right: 10px;
         }
@@ -45,6 +46,7 @@
         <button onclick="sendMessage()">Send</button>
     </div>
     <script>
+        // import { trackChannelSubscription } from '../../static/js/analytics.js';
         // Declare global variables for Firebase services
         let firestore, database, channelsRef, userSubscriptionsRef, messagesRef, currentChannelId;
 
@@ -165,6 +167,7 @@
                 }).then(() => {
                     alert(`Subscribed to ${channelName}`);
                     listUserSubscriptions();
+                    // trackChannelSubscription(channelId, true);
                 }).catch(error => {
                     console.error('Error subscribing to channel:', error);
                 });
@@ -201,6 +204,7 @@
             userSubscriptionsRef.doc(subscriptionId).delete().then(() => {
                 alert('Unsubscribed successfully.');
                 listUserSubscriptions();
+                // trackChannelSubscription(subscriptionId, false);
             }).catch(error => {
                 console.error('Error unsubscribing:', error);
             });
